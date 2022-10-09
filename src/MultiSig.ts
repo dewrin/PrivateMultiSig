@@ -79,6 +79,8 @@ export class MultiSig extends SmartContract {
     this.root.set(initialRoot);
   }
 
+  // TODO: Add voting mechanisms and criteria for adding/removing new members to/from the tree
+
   @method addNewMember(
     memberPrivateKey: PrivateKey,
     currentPath: MerkleWitness,
@@ -107,9 +109,9 @@ export class MultiSig extends SmartContract {
   @method removeMember(
     memberPrivateKey: PrivateKey,
     currentPath: MerkleWitness,
-    newMember: Field,
-    newRoot: Field,
-    newPath: MerkleWitness
+    memberToRemove: Field,
+    memberToRemovePath: MerkleWitness,
+    newRoot: Field
   ) {
     let root = this.root.get();
     this.root.assertEquals(root);
@@ -119,13 +121,20 @@ export class MultiSig extends SmartContract {
       .calculateRoot(Poseidon.hash(memberPrivateKey.toPublicKey().toFields()))
       .assertEquals(root);
 
-    // Confirm the root change with new member addition
-    newPath
-      .calculateRoot(Poseidon.hash(newMember.toFields()))
+    // Make sure that member to be removed currently exists in a tree
+    memberToRemovePath
+      .calculateRoot(Poseidon.hash(memberToRemove.toFields()))
       .assertEquals(newRoot);
 
+    // TODO: Find a way to validate whole tree in order to approve new root
+    // In theory, take numberOfMembers - 1 and for each one confirm path leading to a new root and make sure memberToBeRemoved path is not working
+    // This is not the best way since there could be more paths that we do not know of and more edge cases
+
+    // Set new root
     this.root.set(newRoot);
-    this.numberOfMembers.set(this.numberOfMembers.get().add(1));
+
+    // Update number of members and minimal quorum
+    this.numberOfMembers.set(this.numberOfMembers.get().sub(1));
     this.minimalQuorum.set(this.numberOfMembers.get().div(2));
   }
 
