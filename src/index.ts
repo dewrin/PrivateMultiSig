@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { MultiSig } from './MultiSig.js';
 
-export { Add };
+export { MultiSig };
