@@ -102,6 +102,7 @@ export class MultiSig extends SmartContract {
       .assertEquals(newRoot);
 
     this.root.set(newRoot);
+    this.numberOfMembers.assertEquals(this.numberOfMembers.get());
     this.numberOfMembers.set(this.numberOfMembers.get().add(1));
     this.minimalQuorum.set(this.numberOfMembers.get().div(2));
   }
@@ -134,7 +135,9 @@ export class MultiSig extends SmartContract {
     this.root.set(newRoot);
 
     // Update number of members and minimal quorum
+    this.numberOfMembers.assertEquals(this.numberOfMembers.get());
     this.numberOfMembers.set(this.numberOfMembers.get().sub(1));
+    this.minimalQuorum.assertEquals(this.minimalQuorum.get());
     this.minimalQuorum.set(this.numberOfMembers.get().div(2));
   }
 
@@ -143,6 +146,8 @@ export class MultiSig extends SmartContract {
     path: MerkleWitness,
     proposal: CircuitString
   ) {
+    this.root.assertEquals(this.root.get());
+    this.proposalHash.assertEquals(this.proposalHash.get());
     // Make sure there is no active proposal
     this.proposalHash.get().assertEquals(Field(0));
     path
@@ -159,16 +164,16 @@ export class MultiSig extends SmartContract {
     let votesBitmap = this.cancelVotesBitmap.get();
     this.cancelVotesBitmap.assertEquals(votesBitmap);
 
-    let voteCount = 0;
+    let voteCount = new Field(0);
     let bits = votesBitmap.toBits();
 
     // Readout a bitmap for cancel votes
     for (let i = 0; i <= 254; i++) {
-      const voteValue = Circuit.if(bits[i], 1, 0);
-      voteCount += voteValue;
+      const voteValue = Circuit.if(Boolean(bits[i]), Field(1), Field(0));
+      voteCount = voteCount.add(voteValue);
     }
 
-    Field(voteCount).assertGte(this.minimalQuorum.get());
+    voteCount.assertGte(this.minimalQuorum.get());
     this.proposalHash.set(Field(0));
   }
 
@@ -179,16 +184,16 @@ export class MultiSig extends SmartContract {
     let votesBitmap = this.executeVotesBitmap.get();
     this.executeVotesBitmap.assertEquals(votesBitmap);
 
-    let voteCount = 0;
+    let voteCount = new Field(0);
     let bits = votesBitmap.toBits();
 
     // Readout a bitmap for cancel votes
     for (let i = 0; i <= 254; i++) {
-      const voteValue = Circuit.if(bits[i], 1, 0);
-      voteCount += voteValue;
+      const voteValue = Circuit.if(Boolean(bits[i]), Field(1), Field(0));
+      voteCount = voteCount.add(voteValue);
     }
 
-    Field(voteCount).assertGte(this.minimalQuorum.get());
+    voteCount.assertGte(this.minimalQuorum.get());
 
     // TODO: Proposal execution logic for making custom transfers
   }
